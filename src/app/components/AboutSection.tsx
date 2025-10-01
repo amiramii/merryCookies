@@ -58,7 +58,7 @@ function AboutSection() {
             className='space-y-4 text-gray-800'
           >
             <p className='text-2xl leading-relaxed'>
-            From the idea to the shop itself, everything has been created by just the two of us. Every cookie is unique carefully weighed, rolled, and decorated by hand using only quality ingredients like specialty coffee, French free-range eggs, and local butter. It's simply us, with lots of love and passion.
+            From the idea to the shop itself, everything has been created by just the two of us. Every cookie is unique carefully weighed, rolled, and decorated by hand using only quality ingredients like specialty coffee, French free-range eggs, and local butter. It&apos;s simply us, with lots of love and passion.
             <br />
             <span className='font-medium bg-pink-100/35 p-1 px-2 rounded-xl'>
             Thank you for being part of this sweet adventure.

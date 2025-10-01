@@ -69,7 +69,7 @@ function MenuSection() {
         viewport={{ once: true }}
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-10"
       >
-        {cookiesData.map((cookie, index) => (
+        {cookiesData.map((cookie) => (
           <motion.div
             key={cookie.id}
             variants={itemVariants}
