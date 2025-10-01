@@ -3,7 +3,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 function HeroSection() {
   return (
-    <section className="flex-1 relative  py-40 md:min-h-[500px] z-0" id="home">
+    <section className="flex-1 relative  py-40 md:min-h-[500px] z-0 bg-[#e3a0aa]  rounded-3xl" id="home">
         
         <Image 
         src="/betterQuality.png" 
