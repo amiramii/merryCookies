@@ -8,7 +8,7 @@ interface CookieCardProps {
 
 const CookieCard: React.FC<CookieCardProps> = ({ cookie }) => {
   return (
-    <div className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 border-b-2 border-[#e39fac]">
+    <div className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 border-b-2 border-[#e39fac] h-80">
       <div className="relative h-48 w-full flex items-center justify-center text-center">
         <Image
           src={cookie.image}

@@ -4,6 +4,7 @@ import HeroSection from "./components/HeroSection";
 import AboutSection from "./components/AboutSection";
 import MenuSection from "./components/MenuSection";
 import Footer from "./components/Footer";
+import ConatctForm from "./components/ConatctForm";
 export default function Home() {
   return (
     <div className="min-h-screen w-full flex flex-col">
@@ -11,7 +12,9 @@ export default function Home() {
       <HeroSection />
       <AboutSection />
       <MenuSection />
+      <ConatctForm />
       <Footer />
+
     </div>
   );
 }
