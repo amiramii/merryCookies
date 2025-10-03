@@ -1,7 +1,6 @@
 // app/api/send/route.ts
 
 import { Resend } from 'resend';
-import EmailTemplate from '@/app/components/EmailTemplate';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
