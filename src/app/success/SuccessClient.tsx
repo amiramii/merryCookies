@@ -126,7 +126,7 @@ export default function SuccessClient() {
         <h3 className="mt-6 font-semibold">Shipping / Delivery</h3>
         <div className="bg-gray-50 p-4 rounded">
           {typeof session?.shipping === 'object' ? (
-            Object.entries(session.shipping as Record<string, any>).map(([key, val]) => (
+            Object.entries(session.shipping as Record<string, unknown>).map(([key, val]) => (
               <p key={key} className="text-sm"><span className="font-medium capitalize mr-1">{key.replace('_', ' ')}:</span> {String(val)}</p>
             ))
           ) : (
