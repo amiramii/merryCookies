@@ -1,6 +1,7 @@
 'use client';
 import React, { useState } from 'react';
 import Image from 'next/image';
+import { motion } from 'framer-motion';
 
 function ContactForm() {
   const [formData, setFormData] = useState({
@@ -136,7 +137,13 @@ function ContactForm() {
           height={100}
           className="absolute -left-8 object-contain w-80 h-80 bottom-0 hidden xl:block"
         />
-      <span className="border-b-4 border-[#47302e] p-1 h-4 w-12 mb-7"></span>
+      <motion.span 
+            initial={{ width: 0 }}
+            whileInView={{ width: "3.5rem" }}
+            transition={{ duration: 0.8, delay: 0.3 }}
+            viewport={{ once: true }}
+            className="border-b-4 border-[#47302e] p-1 h-4 mb-7"
+          ></motion.span>
 
       <form
         onSubmit={handleSubmit}

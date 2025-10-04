@@ -42,7 +42,7 @@ function MenuSection() {
           viewport={{ once: true }}
           className="text-[#e39fac] text-4xl md:text-5xl font-bold mb-6 flex flex-col items-center gap-2"
         >
-          Our Cookies
+          Cookies
           <motion.span 
             initial={{ width: 0 }}
             whileInView={{ width: "3.5rem" }}

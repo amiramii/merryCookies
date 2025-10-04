@@ -25,7 +25,7 @@ function HeroSection() {
         <section className=" max-w-4xl flex flex-col gap-5 justify-center items-center">
           <div className="w-full h-0.5 bg-gradient-to-r from-transparent via-[#983040] to-transparent" />
           <p className="text-xl md:text-2xl lg:text-3xl font-bold drop-shadow-xl/50 text-white mb-10" style={{fontFamily: 'Junge, serif'}}>
-          Homemade cookies. Organic coffee. Pure joy in every bite.
+          Homemade cookies. Specialty milkshakes. Pure joy in every bite.
           </p>
         </section>
         <Link target="_blank" href="https://www.instagram.com/merrycookiestarbes/" className="  py-1 px-3 bg-[#ffdeda] text-[#47302e] font-bold rounded-xl  border-3 border-[#47302e00] hover:border-[#47302e]  h-max text-xl text-center  w-max text-nowrap absolute bottom-10 xl:bottom-5 left-1/2 -translate-x-1/2 ">Order Now</Link>
