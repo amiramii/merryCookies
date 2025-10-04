@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
+import type { FormEvent, ChangeEvent } from 'react';
 
 function ContactForm() {
   const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
@@ -62,7 +63,7 @@ function ContactForm() {
     }
   };
 
-  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
+  function handleChange(e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
 
@@ -71,12 +72,11 @@ function ContactForm() {
     setErrors({ ...errors, [name]: error });
   }
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     
     // Validate all fields before submission
     const newErrors = {
-      firstName: validateField('firstName', formData.firstName),
       lastName: validateField('lastName', formData.lastName),
       email: validateField('email', formData.email),
       phone: validateField('phone', formData.phone),
@@ -149,8 +149,9 @@ function ContactForm() {
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || 'Failed to send receipt');
       setReceiptStatus('Receipt sent — check your email.');
-    } catch (err: any) {
-      setReceiptStatus(err?.message || 'Failed to send receipt');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      setReceiptStatus(message);
     } finally {
       setSendingReceipt(false);
     }
@@ -161,9 +162,9 @@ function ContactForm() {
       {successFlag && sessionIdFromQuery && (
         <div className="w-full max-w-2xl mb-6 p-4 bg-green-50 border border-green-200 rounded text-center">
           <div className="flex flex-col items-center gap-3">
-            <img src="/success.png" alt="Success" className="w-20 h-20" />
-            <div className="font-semibold text-green-700 text-lg">Thank you — your payment was successful!</div>
-            <div className="text-sm text-gray-700">We received your order. If you didn't get a receipt, enter an email below and we'll send it.</div>
+            <Image src="/success.png" alt="Success" width={80} height={80} />
+            <div className="font-semibold text-green-700 text-lg">Thank you &mdash; your payment was successful!</div>
+            <div className="text-sm text-gray-700">We received your order. If you didn&apos;t get a receipt, enter an email below and we&apos;ll send it.</div>
             <div className="mt-3 flex flex-col md:flex-row gap-2 justify-center">
               <input id="receiptEmail" placeholder="you@example.com" defaultValue={formData.email} className="p-2 border rounded w-64" />
               <button onClick={sendReceipt} disabled={sendingReceipt} className="py-2 px-4 bg-[#ffdeda] rounded font-semibold">
@@ -178,16 +179,16 @@ function ContactForm() {
         <Image 
           src="/image3.png" 
           alt="Contact illustration" 
-          width={100}
-          height={100}
-          className="absolute right-0 object-contain w-80 h-80 top-0 hidden xl:block"
+          width={320}
+          height={320}
+          className="absolute right-0 hidden xl:block"
         />
         <Image 
           src="/image4.png" 
           alt="Contact decoration" 
-          width={100}
-          height={100}
-          className="absolute -left-8 object-contain w-80 h-80 bottom-0 hidden xl:block"
+          width={320}
+          height={320}
+          className="absolute -left-8 hidden xl:block"
         />
       <motion.span 
             initial={{ width: 0 }}
