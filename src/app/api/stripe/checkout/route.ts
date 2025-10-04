@@ -10,24 +10,25 @@ export async function POST(req: Request) {
 
   try {
     const headers: Record<string, string> = {};
-    // @ts-ignore
-    for (const [k, v] of req.headers) headers[k] = String(v);
+    for (const [k, v] of req.headers.entries()) headers[k] = String(v);
     console.log('Request headers:', headers);
-  } catch (e) {
-    console.warn('Could not log headers', e);
+  } catch (err) {
+    console.warn('Could not log headers', err);
   }
 
-  let body: any;
+  let body: unknown;
   try {
     body = await req.json();
-  } catch (e: any) {
-    console.error('Could not parse JSON body', e);
+  } catch (err) {
+    console.error('Could not parse JSON body', err);
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
   console.log('Request body:', body);
 
-  const cart = body?.cart;
+  const parsed = (body && typeof body === 'object') ? (body as Record<string, unknown>) : null;
+  const cart = Array.isArray(parsed?.cart) ? parsed!.cart as unknown[] : undefined;
+
   if (!Array.isArray(cart) || cart.length === 0) {
     return NextResponse.json({ error: 'Cart is empty or invalid' }, { status: 400 });
   }
@@ -40,9 +41,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: `Invalid cart item at index ${i}: ${JSON.stringify(item)}` }, { status: 400 });
     }
 
-    const product = item.product ?? item.name ?? null;
-    const price = Number(item.price);
-    const quantity = Number(item.quantity);
+    const it = item as Record<string, unknown>;
+    const product = (typeof it.product === 'string') ? it.product : (typeof it.name === 'string' ? it.name : null);
+    const price = (typeof it.price === 'number') ? it.price : (typeof it.price === 'string' ? Number(it.price) : NaN);
+    const quantity = (typeof it.quantity === 'number') ? it.quantity : (typeof it.quantity === 'string' ? Number(it.quantity) : NaN);
 
     if (!product || typeof product !== 'string') {
       console.error('Invalid or missing product at index', i, item);
@@ -59,8 +61,11 @@ export async function POST(req: Request) {
   }
 
   try {
-    const line_items = cart.map((item: any) => {
-      const productName = item.product ?? item.name;
+    const line_items = cart.map((item) => {
+      const it = item as Record<string, unknown>;
+      const productName = (typeof it.product === 'string') ? it.product : (typeof it.name === 'string' ? it.name : '');
+      const priceNum = Number(it.price);
+      const qtyNum = Number(it.quantity) || 1;
       return {
         price_data: {
           currency: 'eur',
@@ -68,9 +73,9 @@ export async function POST(req: Request) {
             name: productName,
             images: ['https://merry-cookies.com/public/image.png'],
           },
-          unit_amount: Math.round(Number(item.price) * 100),
+          unit_amount: Math.round(priceNum * 100),
         },
-        quantity: Number(item.quantity) || 1,
+        quantity: qtyNum,
       };
     });
 
@@ -84,9 +89,10 @@ export async function POST(req: Request) {
 
     console.log('Created Stripe session', { id: session.id, url: session.url });
     return NextResponse.json({ url: session.url });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Stripe session creation failed', error);
-    return NextResponse.json({ error: error?.message || String(error) }, { status: 500 });
+    const msg = error instanceof Error ? error.message : String(error);
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
 

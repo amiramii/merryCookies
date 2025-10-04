@@ -1,4 +1,5 @@
 "use client"
+
 import React, { useState } from 'react'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
@@ -72,12 +73,12 @@ export default function MilkshakeSection() {
         setLoading(false)
         return
       }
-      if (typeof it.price !== 'number' || isNaN(it.price) || it.price <= 0) {
+      if (typeof it.price !== 'number' || Number.isNaN(it.price) || it.price <= 0) {
         setError(`Invalid price for product ${it.product} at index ${i}`)
         setLoading(false)
         return
       }
-      if (typeof it.quantity !== 'number' || isNaN(it.quantity) || it.quantity <= 0) {
+      if (typeof it.quantity !== 'number' || Number.isNaN(it.quantity) || it.quantity <= 0) {
         setError(`Invalid quantity for product ${it.product} at index ${i}`)
         setLoading(false)
         return
@@ -91,30 +92,33 @@ export default function MilkshakeSection() {
         body: JSON.stringify({ cart }),
       })
 
-      // prefer res.json but handle non-json safely
-      let data: any = null
+      // handle non-json safely
+      const text = await res.text()
+      let data: unknown
       try {
-        data = await res.json()
-      } catch (e) {
-        const text = await res.text()
+        data = JSON.parse(text)
+      } catch (err) {
         console.error('Non-JSON response from checkout API', { status: res.status, text })
-        setError(`Server error: non-JSON response (status ${res.status}). Check server logs. Response preview: ${text.slice(0, 200)}`)
+        setError(`Server error: non-JSON response (status ${res.status}). Check server logs.`)
         setLoading(false)
         return
       }
 
-      if (data?.url) {
-        window.location.href = data.url
+      const parsed = (data && typeof data === 'object') ? (data as Record<string, unknown>) : null
+
+      if (parsed?.url && typeof parsed.url === 'string') {
+        window.location.href = parsed.url
         return
       }
 
-      if (data?.error) {
-        setError(`Could not start payment: ${data.error}`)
+      if (parsed?.error && typeof parsed.error === 'string') {
+        setError(`Could not start payment: ${parsed.error}`)
       } else {
         setError('Could not start payment. Try again.')
       }
-    } catch (e: any) {
-      setError(`Payment error: ${e?.message || 'Try again.'}`)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      setError(`Payment error: ${msg}`)
     }
 
     setLoading(false)
@@ -131,23 +135,23 @@ export default function MilkshakeSection() {
               <AnimatedLine className="p-1 h-4 w-full" />
             </h2>
             <p className="text-base md:text-lg text-[#47302e] font-medium mb-2 text-center md:text-left">
-              Merry Cookies offers a delightful range of milkshakes made with care , perfect with cookies or on their own.
+              Merry Cookies offers a delightful range of milkshakes made with care — perfect with cookies or on their own.
             </p>
             <p className="text-sm text-[#47302e] opacity-90">Cookies, specialty coffee, matcha and handcrafted milkshakes.</p>
           </div>
         </motion.div>
       </div>
 
-      <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.15 }} className="w-full flex flex-col items-center mt-8 rounded-2xl px-6 md:px-0">
-        <div className="w-full max-w-xl rounded-2xl">
-          <Carousel className="w-full rounded-2xl">
+      <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.15 }} className="w-full flex flex-col items-center mt-8">
+        <div className="w-full max-w-xl">
+          <Carousel className="w-full">
             <CarouselContent>
               {MILKSHAKES.map((m, i) => (
-                <CarouselItem key={m.name} className="flex justify-center ">
+                <CarouselItem key={m.name} className="flex justify-center">
                   <div className="bg-[#ffecc09d] shadow-xl rounded-2xl w-full flex flex-col items-center p-6">
                     <div className="flex flex-col items-center justify-center w-full">
                       <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.45 }} className="w-full flex justify-center">
-                        <div className="relative w-56 h-96 md:w-64 md:h-[400px]">
+                        <div className="relative w-56 h-72 md:w-64 md:h-80">
                           <Image src={m.image} alt={m.name} fill className="rounded-xl object-cover" />
                         </div>
                       </motion.div>
