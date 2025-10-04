@@ -271,7 +271,7 @@ export default function MilkshakeSection() {
                   <button
                     onClick={handleSendReceipt}
                     disabled={receiptSending}
-                    className="py-2 px-6 bg-[#ffdeda] text-[#47302e] font-bold rounded-xl border-2 border-[#47302e] hover:bg-[#e39fac] transition-colors"
+                    className="py-2 px-6 bg-[#ffdeda] text-[#47302e] font-bold rounded-xl border-2 border-[#47302e] hover:bg-[#e39fac] transition-colors cursor-pointer"
                   >
                     {receiptSending ? 'Sending...' : 'Send Receipt'}
                   </button>

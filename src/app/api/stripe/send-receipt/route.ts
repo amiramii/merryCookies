@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { Resend } from 'resend'
+import React from 'react'
+import ReactDOMServer from 'react-dom/server'
+import ReceiptTemplate from '../../../components/ReceiptTemplate'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', { apiVersion: '2025-09-30.clover' })
 const resend = new Resend(process.env.RESEND_API_KEY || '')
@@ -13,27 +16,32 @@ export async function POST(req: Request) {
 
     // Retrieve session with expanded line items
     const session = await stripe.checkout.sessions.retrieve(session_id, { expand: ['line_items'] })
-    // Extract shipping info from customer details as shipping_details is deprecated
-    const shippingInfo = session.customer_details
-      ? { name: session.customer_details.name, address: session.customer_details.address }
+    // Flatten shipping info for email template
+    const customer = session.customer_details
+    const addr = customer?.address
+    const shippingInfo = customer
+      ? {
+          recipient: customer.name || '',
+          line1: addr?.line1 || '',
+          line2: addr?.line2 || '',
+          city: addr?.city || '',
+          state: addr?.state || '',
+          postal_code: addr?.postal_code || '',
+          country: addr?.country || '',
+        }
       : {}
 
-    // Format line items with correct types
-    const lineItems = session.line_items?.data.map((item: Stripe.LineItem) => {
-      const desc = item.description || (item.price?.product as Stripe.Product)?.name || ''
-      const qty = item.quantity
-      const rawAmount = (item.price?.unit_amount ?? item.amount_total)
-      const amount = (rawAmount ?? 0) / 100
-      return `${qty} x ${desc} - €${amount}`
-    }).join('\n') ?? ''
+    // Prepare line items array for template
+    const receiptItems = session.line_items?.data.map((item: Stripe.LineItem) => ({
+      description: item.description || (item.price?.product as Stripe.Product)?.name || '',
+      quantity: item.quantity || 0,
+      price: ((item.price?.unit_amount ?? item.amount_total) ?? 0) / 100,
+    })) || []
 
-    const html = `
-      <h2>Thank you for your order</h2>
-      <p>Order ID: ${session.id}</p>
-      <pre>${lineItems}</pre>
-      <p>Total: €${((session.amount_total) ?? 0) / 100}</p>
-      <p>Shipping: ${JSON.stringify(shippingInfo)}</p>
-    `
+    // Render React Email template to HTML
+    const html = ReactDOMServer.renderToStaticMarkup(
+      React.createElement(ReceiptTemplate, { session, lineItems: receiptItems, shippingInfo })
+    )
 
     // Send email via Resend
     const emailResponse = await resend.emails.send({
