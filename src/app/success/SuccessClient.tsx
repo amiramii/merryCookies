@@ -118,30 +118,6 @@ export default function SuccessClient() {
           {JSON.stringify(session?.shipping, null, 2)}
         </pre>
       </div>
-
-      <div className="mt-6 bg-white p-6 rounded shadow">
-        <h3 className="font-semibold mb-2">Send receipt</h3>
-        <p className="text-sm mb-3">
-          Enter an email to receive your receipt (or we&apos;ll send it automatically if you prefer).
-        </p>
-        <div className="flex gap-2 justify-center">
-          <input
-            type="email"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            className="p-2 border rounded w-64"
-            placeholder="you@example.com"
-          />
-          <button
-            onClick={sendReceipt}
-            disabled={sending}
-            className="py-2 px-4 bg-[#ffdeda] rounded font-semibold"
-          >
-            {sending ? 'Sending...' : 'Send Receipt'}
-          </button>
-        </div>
-        {sentMessage && <p className="mt-3">{sentMessage}</p>}
-      </div>
     </div>
   )
 }

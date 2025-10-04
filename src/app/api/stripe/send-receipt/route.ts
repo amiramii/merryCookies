@@ -35,16 +35,15 @@ export async function POST(req: Request) {
       <p>Shipping: ${JSON.stringify(shippingInfo)}</p>
     `
 
-    const { data, error } = await resend.emails.send({
+    // Send email via Resend
+    const emailResponse = await resend.emails.send({
       from: process.env.FROM_EMAIL || 'onboarding@resend.dev',
       to: email,
       subject: `Your Merry Cookies receipt - ${session.id}`,
       html,
     })
-
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-
-    return NextResponse.json({ ok: true, data })
+    console.log('Resend email response:', emailResponse)
+    return NextResponse.json({ ok: true, emailResponse })
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error)
     return NextResponse.json({ error: message }, { status: 500 })
