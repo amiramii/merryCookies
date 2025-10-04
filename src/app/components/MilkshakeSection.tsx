@@ -33,7 +33,6 @@ export default function MilkshakeSection() {
   const [error, setError] = useState('')
   const [paymentStatus, setPaymentStatus] = useState<'success' | 'canceled' | null>(null)
   const [sessionId, setSessionId] = useState<string | null>(null)
-
   useEffect(() => {
     // Get URL parameters - ensure this runs on client side
     const params = new URLSearchParams(window.location.search)
@@ -42,10 +41,12 @@ export default function MilkshakeSection() {
     const session = params.get('session_id')
 
     // Clear URL parameters without affecting the hash
-    const currentPath = window.location.pathname
-    const currentHash = window.location.hash
+    const currentUrl = new URL(window.location.href)
+    const hash = currentUrl.hash
+    
     if (success || canceled) {
-      window.history.replaceState({}, '', currentPath + currentHash)
+      // Remove all query parameters but keep the hash
+      window.history.replaceState({}, '', `${currentUrl.pathname}${hash}`)
     }
 
     if (success && session) {
@@ -53,7 +54,9 @@ export default function MilkshakeSection() {
       setSessionId(session)
     } else if (canceled) {
       setPaymentStatus('canceled')
-    }    // Scroll to milkshake section if needed
+    }
+    
+    // Scroll to milkshake section if needed
     const scrollToSection = () => {
       const element = document.getElementById('milkshake')
       if (element && (success || canceled)) {
@@ -139,7 +142,7 @@ export default function MilkshakeSection() {
       let data: unknown
       try {
         data = JSON.parse(text)
-      } catch (err) {
+      } catch (error) { // Changed from err to error for consistency
         console.error('Non-JSON response from checkout API', { status: res.status, text })
         setError(`Server error: non-JSON response (status ${res.status}). Check server logs.`)
         setLoading(false)
@@ -215,11 +218,12 @@ export default function MilkshakeSection() {
             />
             <div className="mb-6 text-lg text-[#47302e] font-medium">Your milkshakes will be ready soon.</div>
             <h3 className="text-[#e39fac] text-xl font-bold mb-3">Still have questions?</h3>
-            <div className="mt-1 flex flex-col md:flex-row justify-center gap-3 w-full max-w-md">
-              <input 
+            <div className="mt-1 flex flex-col md:flex-row justify-center gap-3 w-full max-w-md">              <input 
+                type="email"
                 placeholder="Enter your email for receipt" 
                 defaultValue={''} 
-                id="receiptEmail" 
+                id="receiptEmail"
+                aria-label="Email address for receipt"
                 className="p-3 border-2 border-[#e39fac] rounded-xl w-full md:w-64 text-[#47302e] placeholder:text-[#47302e]/60 focus:outline-none focus:border-[#47302e]" 
               />
               <button 
@@ -252,7 +256,7 @@ export default function MilkshakeSection() {
               <AnimatedLine className="p-1 h-4 w-full" />
             </h2>
             <p className="text-base md:text-lg text-[#47302e] font-medium mb-2 text-center md:text-left">
-              Merry Cookies offers a delightful range of milkshakes made with care — perfect with cookies or on their own.
+              Merry Cookies offers a delightful range of milkshakes made with care &mdash; perfect with cookies or on their own.
             </p>
             <p className="text-sm text-[#47302e] opacity-90">Cookies, specialty coffee, matcha and handcrafted milkshakes.</p>
           </div>
@@ -262,8 +266,8 @@ export default function MilkshakeSection() {
       <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.15 }} className="w-full flex flex-col items-center mt-8 px-6 md:px-0">
         <div className="w-full max-w-xl">
           <Carousel className="w-full">
-            <CarouselContent>
-              {MILKSHAKES.map((m, i) => (                <CarouselItem key={m.name} className="flex justify-center">
+            <CarouselContent>              {MILKSHAKES.map((m, i) => (
+                <CarouselItem key={m.name} className="flex justify-center">
                   <div className="bg-[#ffecc09d] shadow-xl rounded-2xl w-full flex flex-col items-center p-6">
                     <div className="flex flex-col items-center justify-center w-full">
                       <motion.div 
@@ -279,9 +283,13 @@ export default function MilkshakeSection() {
 
                       <h3 className="text-2xl font-bold text-[#47302e] mt-4 mb-2 text-center">{m.name}</h3>
                       <p className="text-md text-[#47302e] mb-2 font-medium text-center px-4">{m.description}</p>
-                      <p className="text-lg font-bold text-[#e39fac] mb-3 text-center">€{m.price.toFixed(2)}</p>                      <div className="flex flex-col gap-2 items-center w-full">
-                        <label className="font-semibold text-lg">Quantity</label>
+                      <p className="text-lg font-bold text-[#e39fac] mb-3 text-center">&euro;{m.price.toFixed(2)}</p>
+                      <div className="flex flex-col gap-2 items-center w-full">
+                        <label htmlFor={`quantity-${i}`} className="font-semibold text-lg">
+                          Quantity
+                        </label>
                         <input 
+                          id={`quantity-${i}`}
                           type="number" 
                           min={0} 
                           max={20} 
