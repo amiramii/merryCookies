@@ -4,6 +4,10 @@ import Image from 'next/image';
 import { motion } from 'framer-motion';
 
 function ContactForm() {
+  const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+  const successFlag = params?.get('success') === 'true';
+  const sessionIdFromQuery = params?.get('session_id') || null;
+
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -22,6 +26,10 @@ function ContactForm() {
     subject: '',
     message: '',
   });
+
+  // add receipt-send state
+  const [sendingReceipt, setSendingReceipt] = useState(false);
+  const [receiptStatus, setReceiptStatus] = useState('');
 
   // Validation functions
   const validateEmail = (email: string): boolean => {
@@ -120,8 +128,52 @@ function ContactForm() {
     }
   }
 
+  async function sendReceipt() {
+    const emailToSend = formData.email || (document.getElementById('receiptEmail') as HTMLInputElement)?.value || '';
+    if (!emailToSend) {
+      setReceiptStatus('Enter an email address in the contact form or below');
+      return;
+    }
+    if (!sessionIdFromQuery) {
+      setReceiptStatus('No session id found');
+      return;
+    }
+    setSendingReceipt(true);
+    setReceiptStatus('');
+    try {
+      const res = await fetch('/api/stripe/send-receipt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ session_id: sessionIdFromQuery, email: emailToSend }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || 'Failed to send receipt');
+      setReceiptStatus('Receipt sent — check your email.');
+    } catch (err: any) {
+      setReceiptStatus(err?.message || 'Failed to send receipt');
+    } finally {
+      setSendingReceipt(false);
+    }
+  }
+
   return (
     <div className="w-full flex flex-col items-center justify-center min-h-max mb-10 relative">
+      {successFlag && sessionIdFromQuery && (
+        <div className="w-full max-w-2xl mb-6 p-4 bg-green-50 border border-green-200 rounded text-center">
+          <div className="flex flex-col items-center gap-3">
+            <img src="/success.png" alt="Success" className="w-20 h-20" />
+            <div className="font-semibold text-green-700 text-lg">Thank you — your payment was successful!</div>
+            <div className="text-sm text-gray-700">We received your order. If you didn't get a receipt, enter an email below and we'll send it.</div>
+            <div className="mt-3 flex flex-col md:flex-row gap-2 justify-center">
+              <input id="receiptEmail" placeholder="you@example.com" defaultValue={formData.email} className="p-2 border rounded w-64" />
+              <button onClick={sendReceipt} disabled={sendingReceipt} className="py-2 px-4 bg-[#ffdeda] rounded font-semibold">
+                {sendingReceipt ? 'Sending...' : 'Send Receipt'}
+              </button>
+            </div>
+            {receiptStatus && <div className="mt-2 text-sm">{receiptStatus}</div>}
+          </div>
+        </div>
+      )}
       <h3 className="text-[#e39fac] text-4xl md:text-5xl font-bold mb-2">Still have  questions?</h3>
         <Image 
           src="/image3.png" 

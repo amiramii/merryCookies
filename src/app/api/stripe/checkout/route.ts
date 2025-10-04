@@ -79,12 +79,27 @@ export async function POST(req: Request) {
       };
     });
 
+    // Get base URL from headers or env var, fallback to localhost
+    let base = process.env.NEXT_PUBLIC_BASE_URL;
+    if (!base) {
+      // Try to get from request headers
+      const host = req.headers.get('host') || 'localhost:3000';
+      const protocol = host.includes('localhost') ? 'http' : 'https';
+      base = `${protocol}://${host}`;
+    }
+    // Remove any trailing slash
+    base = base.replace(/\/$/, '');
+
+    console.log('Using base URL:', base);
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items,
       mode: 'payment',
-      success_url: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/?success=true`,
-      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/?canceled=true`,
+      shipping_address_collection: {
+        allowed_countries: ['FR', 'DZ', 'US']
+      },      success_url: `${base}?success=true&session_id={CHECKOUT_SESSION_ID}#milkshake`,
+      cancel_url: `${base}?canceled=true#milkshake`,
     });
 
     console.log('Created Stripe session', { id: session.id, url: session.url });
