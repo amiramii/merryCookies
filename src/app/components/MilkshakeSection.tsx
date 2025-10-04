@@ -162,9 +162,8 @@ export default function MilkshakeSection() {
         setError(`Could not start payment: ${parsed.error}`)
       } else {
         setError('Could not start payment. Try again.')
-      }
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err)
+      }    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error)
       setError(`Payment error: ${msg}`)
     }
 
@@ -316,7 +315,7 @@ export default function MilkshakeSection() {
 
         {error && <p className="text-red-500 mt-2">{error}</p>}
 
-        <p className="text-xl text-[#47302e] font-bold mt-6">Total: €{total.toFixed(2)}</p>
+        <p className="text-xl text-[#47302e] font-bold mt-6">Total: &euro;{total.toFixed(2)}</p>
       </motion.div>
     </section>
   )

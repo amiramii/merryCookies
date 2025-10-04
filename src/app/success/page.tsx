@@ -98,19 +98,18 @@ export default function SuccessPage() {
       <p className="mb-4">We received your order. Below is a summary &mdash; you can request a receipt emailed to you.</p>
 
       <div className="text-left bg-white p-6 rounded shadow">
-        <h2 className="font-semibold mb-2">Order summary</h2>
-        {session?.line_items?.data?.map((item: LineItem, index: number) => (
-          <div key={index} className="flex justify-between py-1">
+        <h2 className="font-semibold mb-2">Order summary</h2>        {session?.line_items?.data?.map((item, index) => (
+          <div key={`line-item-${index}`} className="flex justify-between py-1">
             <div>{item.description || item.price?.product?.name || 'Unknown item'}</div>
             <div>
-              {item.quantity || 0} x €{((item.price?.unit_amount ?? item.amount_total) || 0) / 100}
+              {item.quantity || 0} x &euro;{((item.price?.unit_amount ?? item.amount_total) || 0) / 100}
             </div>
           </div>
         ))}
 
         <div className="flex justify-between mt-4 font-bold">
           <div>Total</div>
-          <div>€{((session?.amount_total || session?.total_details?.amount || 0) / 100).toFixed(2)}</div>
+          <div>&euro;{((session?.amount_total || session?.total_details?.amount || 0) / 100).toFixed(2)}</div>
         </div>
 
         <h3 className="mt-4 font-semibold">Shipping / Delivery</h3>
