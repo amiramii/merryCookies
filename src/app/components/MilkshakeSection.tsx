@@ -142,7 +142,7 @@ export default function MilkshakeSection() {
         </motion.div>
       </div>
 
-      <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.15 }} className="w-full flex flex-col items-center mt-8">
+      <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.15 }} className="w-full flex flex-col items-center mt-8 px-6 md:px-0">
         <div className="w-full max-w-xl">
           <Carousel className="w-full">
             <CarouselContent>
@@ -151,7 +151,7 @@ export default function MilkshakeSection() {
                   <div className="bg-[#ffecc09d] shadow-xl rounded-2xl w-full flex flex-col items-center p-6">
                     <div className="flex flex-col items-center justify-center w-full">
                       <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.45 }} className="w-full flex justify-center">
-                        <div className="relative w-56 h-72 md:w-64 md:h-80">
+                        <div className="relative w-56  md:w-64 h-[400px]">
                           <Image src={m.image} alt={m.name} fill className="rounded-xl object-cover" />
                         </div>
                       </motion.div>
