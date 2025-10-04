@@ -11,7 +11,12 @@ export async function POST(req: Request) {
     const { session_id, email } = body
     if (!session_id || !email) return NextResponse.json({ error: 'Missing session_id or email' }, { status: 400 })
 
-    const session = await stripe.checkout.sessions.retrieve(session_id, { expand: ['line_items', 'shipping_details'] })
+    // Retrieve session with expanded line items
+    const session = await stripe.checkout.sessions.retrieve(session_id, { expand: ['line_items'] })
+    // Extract shipping info from customer details as shipping_details is deprecated
+    const shippingInfo = session.customer_details
+      ? { name: session.customer_details.name, address: session.customer_details.address }
+      : {}
 
     // Format line items with correct types
     const lineItems = session.line_items?.data.map((item: Stripe.LineItem) => {
@@ -27,7 +32,7 @@ export async function POST(req: Request) {
       <p>Order ID: ${session.id}</p>
       <pre>${lineItems}</pre>
       <p>Total: €${((session.amount_total) ?? 0) / 100}</p>
-      <p>Shipping: ${JSON.stringify(session.shipping_details || {})}</p>
+      <p>Shipping: ${JSON.stringify(shippingInfo)}</p>
     `
 
     const { data, error } = await resend.emails.send({

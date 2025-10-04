@@ -142,7 +142,7 @@ export default function MilkshakeSection() {
       let data: unknown
       try {
         data = JSON.parse(text)
-      } catch (error) { // Changed from err to error for consistency
+      } catch { // Remove unused 'error' parameter
         console.error('Non-JSON response from checkout API', { status: res.status, text })
         setError(`Server error: non-JSON response (status ${res.status}). Check server logs.`)
         setLoading(false)

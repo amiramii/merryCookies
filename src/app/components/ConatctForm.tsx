@@ -77,6 +77,7 @@ function ContactForm() {
     
     // Validate all fields before submission
     const newErrors = {
+      firstName: validateField('firstName', formData.firstName),
       lastName: validateField('lastName', formData.lastName),
       email: validateField('email', formData.email),
       phone: validateField('phone', formData.phone),
