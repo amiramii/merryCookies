@@ -1,9 +1,6 @@
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { Resend } from 'resend'
-import React from 'react'
-import ReactDOMServer from 'react-dom/server'
-import ReceiptTemplate from '../../../components/ReceiptTemplate'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', { apiVersion: '2025-09-30.clover' })
 const resend = new Resend(process.env.RESEND_API_KEY || '')
@@ -38,10 +35,23 @@ export async function POST(req: Request) {
       price: ((item.price?.unit_amount ?? item.amount_total) ?? 0) / 100,
     })) || []
 
-    // Render React Email template to HTML
-    const html = ReactDOMServer.renderToStaticMarkup(
-      React.createElement(ReceiptTemplate, { session, lineItems: receiptItems, shippingInfo })
-    )
+    // Construct HTML email manually
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #e39fac;">Thank you for your order</h2>
+        <p>Order ID: ${session.id}</p>
+        <h3>Order Summary</h3>
+        <ul style="list-style: none; padding: 0;">${receiptItems.map(item =>
+            `<li style="margin-bottom: 8px;">${item.quantity} x ${item.description} — &euro;${item.price.toFixed(2)}</li>`
+          ).join('')}</ul>
+        <p><strong>Total: &euro;${((session.amount_total ?? 0) / 100).toFixed(2)}</strong></p>
+        <h3>Shipping Details</h3>
+        <p>${shippingInfo.recipient}</p>
+        <p>${shippingInfo.line1}${shippingInfo.line2 ? ', ' + shippingInfo.line2 : ''}</p>
+        <p>${shippingInfo.city}, ${shippingInfo.state} ${shippingInfo.postal_code}, ${shippingInfo.country}</p>
+        <footer style="margin-top: 20px; font-size: 12px; color: #999;">Thank you for choosing Merry Cookies!</footer>
+      </div>
+    `
 
     // Send email via Resend
     const emailResponse = await resend.emails.send({
