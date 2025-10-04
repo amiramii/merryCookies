@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import Image from 'next/image'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel'
 import AnimatedLine from './AnimatedLine'
 
@@ -33,6 +33,12 @@ export default function MilkshakeSection() {
   const [error, setError] = useState('')
   const [paymentStatus, setPaymentStatus] = useState<'success' | 'canceled' | null>(null)
   const [sessionId, setSessionId] = useState<string | null>(null)
+  // Receipt form state
+  const [receiptEmail, setReceiptEmail] = useState('')
+  const [receiptSending, setReceiptSending] = useState(false)
+  const [receiptSent, setReceiptSent] = useState(false)
+  const [receiptError, setReceiptError] = useState('')
+
   useEffect(() => {
     // Get URL parameters - ensure this runs on client side
     const params = new URLSearchParams(window.location.search)
@@ -169,6 +175,35 @@ export default function MilkshakeSection() {
 
     setLoading(false)
   }
+
+  // Send receipt email handler
+  async function handleSendReceipt() {
+    setReceiptError('')
+    if (!receiptEmail) {
+      setReceiptError('Please enter your email address')
+      return
+    }
+    if (!sessionId) {
+      setReceiptError('Session ID not available')
+      return
+    }
+    setReceiptSending(true)
+    try {
+      const res = await fetch('/api/stripe/send-receipt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ session_id: sessionId, email: receiptEmail }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data?.error || 'Failed to send receipt')
+      setReceiptSent(true)
+    } catch (err) {
+      setReceiptError(err instanceof Error ? err.message : String(err))
+    } finally {
+      setReceiptSending(false)
+    }
+  }
+
   return (
     <section className="w-full p-8 xl:px-20 flex flex-col items-center" id="milkshake">
       {/* Payment Status Messages */}
@@ -217,32 +252,33 @@ export default function MilkshakeSection() {
             />
             <div className="mb-6 text-lg text-[#47302e] font-medium">Your milkshakes will be ready soon.</div>
             <h3 className="text-[#e39fac] text-xl font-bold mb-3">Still have questions?</h3>
-            <div className="mt-1 flex flex-col md:flex-row justify-center gap-3 w-full max-w-md">              <input 
-                type="email"
-                placeholder="Enter your email for receipt" 
-                defaultValue={''} 
-                id="receiptEmail"
-                aria-label="Email address for receipt"
-                className="p-3 border-2 border-[#e39fac] rounded-xl w-full md:w-64 text-[#47302e] placeholder:text-[#47302e]/60 focus:outline-none focus:border-[#47302e]" 
-              />
-              <button 
-                onClick={async () => {
-                  const email = (document.getElementById('receiptEmail') as HTMLInputElement).value || ''
-                  if (!email) { alert('Please enter your email address'); return }
-                  const res = await fetch('/api/stripe/send-receipt', { 
-                    method: 'POST', 
-                    headers: {'Content-Type': 'application/json'}, 
-                    body: JSON.stringify({ session_id: sessionId, email }) 
-                  })
-                  const data = await res.json()
-                  if (!res.ok) alert(data?.error || 'Failed to send receipt')
-                  else alert('Receipt has been sent to your email')
-                }} 
-                className="py-2 px-6 bg-[#ffdeda] text-[#47302e] font-bold rounded-xl border-2 border-[#47302e] hover:bg-[#e39fac] transition-colors"
-              >
-                Send Receipt
-              </button>
-            </div>
+            <AnimatePresence>
+              {!receiptSent && (
+                <motion.div
+                  initial={{ opacity: 1 }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.5 }}
+                  className="mt-1 flex flex-col md:flex-row justify-center gap-3 w-full max-w-md"
+                >
+                  <input
+                    type="email"
+                    placeholder="Enter your email for receipt"
+                    value={receiptEmail}
+                    onChange={e => setReceiptEmail(e.target.value)}
+                    aria-label="Email address for receipt"
+                    className="p-3 border-2 border-[#e39fac] rounded-xl w-full md:w-64 text-[#47302e] placeholder:text-[#47302e]/60 focus:outline-none focus:border-[#47302e]"
+                  />
+                  <button
+                    onClick={handleSendReceipt}
+                    disabled={receiptSending}
+                    className="py-2 px-6 bg-[#ffdeda] text-[#47302e] font-bold rounded-xl border-2 border-[#47302e] hover:bg-[#e39fac] transition-colors"
+                  >
+                    {receiptSending ? 'Sending...' : 'Send Receipt'}
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+            {receiptError && <div className="text-red-500 mt-2">{receiptError}</div>}
           </div>
         </motion.div>
       )}
