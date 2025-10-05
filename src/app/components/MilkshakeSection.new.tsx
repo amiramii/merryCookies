@@ -293,7 +293,7 @@ export default function MilkshakeSection() {
                           min={0} 
                           max={20} 
                           value={quantities[i]} 
-                          onChange={e => setQuantity(i, Number(e.target.value))} 
+                          onChange={event => setQuantity(i, Number(event.target.value))} 
                           className="p-2 rounded border border-[#e39fac] w-24 text-center" 
                         />
                       </div>

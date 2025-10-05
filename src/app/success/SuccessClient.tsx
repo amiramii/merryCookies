@@ -2,18 +2,6 @@
 import React, { useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 
-interface LineItem {
-  description?: string
-  quantity?: number
-  price?: {
-    unit_amount?: number
-    product?: {
-      name?: string
-    }
-  }
-  amount_total?: number
-}
-
 export default function SuccessClient() {
   const params = useSearchParams()
   const paymentIntentId = params?.get('payment_intent')
