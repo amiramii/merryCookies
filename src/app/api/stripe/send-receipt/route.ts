@@ -29,7 +29,7 @@ export async function POST(req: Request) {
       : {}
 
     // For PaymentIntent, fetch latest charge for description/amount
-    let receiptItems: { description: string; quantity: number; price: number }[] = [];
+    const receiptItems: { description: string; quantity: number; price: number }[] = [];
     let chargeObj: Stripe.Charge | null = null;
     if (intent.latest_charge) {
       chargeObj = await stripe.charges.retrieve(intent.latest_charge as string);

@@ -14,25 +14,11 @@ interface LineItem {
   amount_total?: number
 }
 
-interface Session {
-  line_items?: {
-    data: LineItem[]
-  }
-  amount_total?: number
-  total_details?: {
-    amount: number
-  }
-  shipping?: unknown
-  customer_details?: {
-    email?: string
-  }
-}
-
 export default function SuccessClient() {
   const params = useSearchParams()
   const paymentIntentId = params?.get('payment_intent')
   const [loading, setLoading] = useState(true)
-  const [intent, setIntent] = useState<any | null>(null)
+  const [intent, setIntent] = useState<Record<string, unknown> | null>(null)
   const [error, setError] = useState('')
 
   // receipt UI state
@@ -100,9 +86,9 @@ export default function SuccessClient() {
 
       <div className="text-left bg-white p-6 rounded-lg shadow-md">
         <h2 className="font-semibold mb-2 text-xl">Payment Summary</h2>
-        <div className="mb-2">Amount: <span className="font-bold">€{intent?.amount ? (intent.amount / 100).toFixed(2) : '-'}</span></div>
-        <div className="mb-2">Email: <span className="font-bold">{intent?.receipt_email || '-'}</span></div>
-        <div className="mb-2">Status: <span className="font-bold">{intent?.status || '-'}</span></div>
+        <div className="mb-2">Amount: <span className="font-bold">€{typeof intent?.amount === 'number' ? (intent.amount / 100).toFixed(2) : '-'}</span></div>
+        <div className="mb-2">Email: <span className="font-bold">{typeof intent?.receipt_email === 'string' ? intent.receipt_email : '-'}</span></div>
+        <div className="mb-2">Status: <span className="font-bold">{typeof intent?.status === 'string' ? intent.status : '-'}</span></div>
       </div>
 
       {/* Receipt form and actions */}
