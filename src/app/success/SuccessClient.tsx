@@ -30,9 +30,9 @@ interface Session {
 
 export default function SuccessClient() {
   const params = useSearchParams()
-  const sessionId = params?.get('session_id')
+  const paymentIntentId = params?.get('payment_intent')
   const [loading, setLoading] = useState(true)
-  const [session, setSession] = useState<Session | null>(null)
+  const [intent, setIntent] = useState<any | null>(null)
   const [error, setError] = useState('')
 
   // receipt UI state
@@ -42,29 +42,27 @@ export default function SuccessClient() {
 
   useEffect(() => {
     async function fetchSession() {
-      if (!sessionId) {
+      if (!paymentIntentId) {
         setLoading(false)
-        setError('No session id provided')
+        setError('No payment intent id provided')
         return
       }
-
       try {
-        const res = await fetch(`/api/stripe/session?session_id=${sessionId}`)
-        if (!res.ok) throw new Error('Failed to fetch session')
-        const data: Session = await res.json()
-        setSession(data)
+        const res = await fetch(`/api/stripe/session?payment_intent=${paymentIntentId}`)
+        if (!res.ok) throw new Error('Failed to fetch payment intent')
+        const data = await res.json()
+        setIntent(data)
         // prefill email if available
-        const customerEmail = data?.customer_details?.email || ''
+        const customerEmail = data?.receipt_email || ''
         setEmail(customerEmail)
       } catch (error) {
-        setError(error instanceof Error ? error.message : 'Error fetching session')
+        setError(error instanceof Error ? error.message : 'Error fetching payment intent')
       } finally {
         setLoading(false)
       }
     }
-
     fetchSession()
-  }, [sessionId])
+  }, [paymentIntentId])
 
   async function sendReceipt() {
     setSentMessage('')
@@ -77,11 +75,14 @@ export default function SuccessClient() {
       const res = await fetch('/api/stripe/send-receipt', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ session_id: sessionId, email }),
+        body: JSON.stringify({ payment_intent: paymentIntentId, email }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data?.error || 'Failed to send receipt')
-      setSentMessage('Receipt sent — check your email.')
+      setSentMessage('Thank you! Receipt sent — you will be redirected to the homepage.')
+      setTimeout(() => {
+        window.location.href = '/'
+      }, 2200)
     } catch (error) {
       setSentMessage(error instanceof Error ? error.message : 'Failed to send receipt')
     } finally {
@@ -95,69 +96,40 @@ export default function SuccessClient() {
   return (
     <div className="max-w-2xl mx-auto p-8 text-center">
       <h1 className="text-3xl font-bold mb-4">Thank you for your order!</h1>
-      <p className="mb-4">We received your order. Below is a summary &mdash; you can request a receipt emailed to you.</p>
+      <p className="mb-4">We received your payment. Below is a summary &mdash; you can request a receipt emailed to you.</p>
 
       <div className="text-left bg-white p-6 rounded-lg shadow-md">
-        <h2 className="font-semibold mb-2 text-xl">Order Summary</h2>
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr>
-              <th className="pb-2 border-b">Item</th>
-              <th className="pb-2 border-b">Qty</th>
-              <th className="pb-2 border-b">Price</th>
-            </tr>
-          </thead>
-          <tbody>
-            {session?.line_items?.data?.map((item, i) => (
-              <tr key={i} className="py-1">
-                <td className="pt-2">{item.description || item.price?.product?.name}</td>
-                <td className="pt-2">{item.quantity}</td>
-                <td className="pt-2">&euro;{(((item.price?.unit_amount ?? item.amount_total) ?? 0) / 100).toFixed(2)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        <div className="flex justify-between mt-4 font-bold">
-          <div>Total</div>
-          <div>&euro;{((session?.amount_total || session?.total_details?.amount || 0) / 100).toFixed(2)}</div>
-        </div>
-
-        <h3 className="mt-6 font-semibold">Shipping / Delivery</h3>
-        <div className="bg-gray-50 p-4 rounded">
-          {typeof session?.shipping === 'object' ? (
-            Object.entries(session.shipping as Record<string, unknown>).map(([key, val]) => (
-              <p key={key} className="text-sm"><span className="font-medium capitalize mr-1">{key.replace('_', ' ')}:</span> {String(val)}</p>
-            ))
-          ) : (
-            <p className="text-sm">N/A</p>
-          )}
-        </div>
+        <h2 className="font-semibold mb-2 text-xl">Payment Summary</h2>
+        <div className="mb-2">Amount: <span className="font-bold">€{intent?.amount ? (intent.amount / 100).toFixed(2) : '-'}</span></div>
+        <div className="mb-2">Email: <span className="font-bold">{intent?.receipt_email || '-'}</span></div>
+        <div className="mb-2">Status: <span className="font-bold">{intent?.status || '-'}</span></div>
       </div>
 
-      {/* Receipt request form */}
-      <div className="mt-8 bg-white p-6 rounded-lg shadow-md">
-        <h3 className="text-xl font-semibold mb-3">Receive your receipt</h3>
-        <p className="text-sm text-gray-600 mb-4">Enter your email address below to have a copy of your receipt emailed to you.</p>
-        <div className="flex flex-col sm:flex-row items-center gap-4">
-          <label htmlFor="receiptEmail" className="sr-only">Email address</label>
-          <input
-            id="receiptEmail"
-            type="email"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            placeholder="you@example.com"
-            className="w-full sm:w-2/3 p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#e39fac]"
-          />
+      {/* Receipt form and actions */}
+      <div className="mt-8 flex flex-col items-center gap-4">
+        <input
+          type="email"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          placeholder="Enter your email for receipt"
+          className="input input-bordered w-full max-w-xs mb-2 bg-white"
+        />
+        <div className="flex gap-4">
           <button
             onClick={sendReceipt}
             disabled={sending}
-            className="mt-2 sm:mt-0 px-5 py-2 bg-[#e39fac] text-white font-semibold rounded-md hover:bg-[#cf7b9f] transition-colors"
+            className="btn bg-[#e39fac] text-white font-bold rounded-xl border-2 border-[#e39fac] hover:bg-[#ffdeda] transition-colors cursor-pointer"
           >
-            {sending ? 'Sending...' : 'Send Receipt'}
+            {sending ? 'Sending…' : 'Send Receipt'}
+          </button>
+          <button
+            onClick={() => window.location.href = '/'}
+            className="btn bg-gray-200 text-[#47302e] font-bold rounded-xl border-2 border-gray-300 hover:bg-gray-300 transition-colors cursor-pointer"
+          >
+            Back to Home
           </button>
         </div>
-        {sentMessage && <p className="mt-3 text-green-600">{sentMessage}</p>}
+        {sentMessage && <div className="mt-4 text-[#e39fac] font-semibold">{sentMessage}</div>}
       </div>
     </div>
   )

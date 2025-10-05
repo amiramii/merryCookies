@@ -6,13 +6,11 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', { apiVersion: '20
 export async function GET(req: Request) {
   try {
     const url = new URL(req.url)
-    const sessionId = url.searchParams.get('session_id')
-    if (!sessionId) return NextResponse.json({ error: 'Missing session_id' }, { status: 400 })
+    const paymentIntentId = url.searchParams.get('payment_intent')
+    if (!paymentIntentId) return NextResponse.json({ error: 'Missing payment_intent' }, { status: 400 })
 
-    const session = await stripe.checkout.sessions.retrieve(sessionId, { expand: ['line_items', 'shipping'] })
-    // Cast to any to allow accessing expanded properties (shipping, line_items) safely
-    const sessAny = session as unknown as Record<string, unknown>
-    return NextResponse.json(sessAny)
+    const intent = await stripe.paymentIntents.retrieve(paymentIntentId)
+    return NextResponse.json(intent)
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : String(err) }, { status: 500 })
   }

@@ -28,11 +28,13 @@ const MILKSHAKES = [
 ]
 
 export default function MilkshakeSection() {
-  const [quantities, setQuantities] = useState<number[]>(() => MILKSHAKES.map(() => 1))
+  const [quantities, setQuantities] = useState<number[]>(() => MILKSHAKES.map(() => 0))
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [paymentStatus, setPaymentStatus] = useState<'success' | 'canceled' | null>(null)
   const [sessionId, setSessionId] = useState<string | null>(null)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
   useEffect(() => {
     // Get URL parameters - ensure this runs on client side
@@ -128,49 +130,19 @@ export default function MilkshakeSection() {
       }
     }
 
-    try {
-      const res = await fetch('/api/stripe/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cart }),
-      })
-
-      // handle non-json safely
-      const text = await res.text()
-      let data: unknown
-      try {
-        data = JSON.parse(text)
-      } catch {
-        console.error('Non-JSON response from checkout API', { status: res.status, text })
-        setError(`Server error: non-JSON response (status ${res.status}). Check server logs.`)
-        setLoading(false)
-        return
-      }
-
-      const parsed = (data && typeof data === 'object') ? (data as Record<string, unknown>) : null
-      
-      if (parsed?.url && typeof parsed.url === 'string') {
-        // Store current section for return navigation
-        sessionStorage.setItem('return-to-section', 'milkshake')
-        window.location.href = parsed.url
-        return
-      }
-
-      if (parsed?.error && typeof parsed.error === 'string') {
-        setError(`Could not start payment: ${parsed.error}`)
-      } else {
-        setError('Could not start payment. Try again.')
-      }
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err)
-      setError(`Payment error: ${msg}`)
-    }
-
+    // Start Stripe Elements flow by storing cart and redirecting to custom checkout
+    sessionStorage.setItem('cart', JSON.stringify(cart))
+    window.location.href = '/checkout'
     setLoading(false)
+    return
   }
 
   return (
     <section className="w-full p-8 xl:px-20 flex flex-col items-center" id="milkshake">
+      {/* DaisyUI Alerts for receipt errors and success */}
+      {errorMessage && <div className="alert alert-error mb-4">{errorMessage}</div>}
+      {successMessage && <div className="alert alert-success mb-4">{successMessage}</div>}
+
       {/* Payment Status Messages */}
       {paymentStatus === 'canceled' && (
         <motion.div 
@@ -227,15 +199,20 @@ export default function MilkshakeSection() {
               <button 
                 onClick={async () => {
                   const email = (document.getElementById('receiptEmail') as HTMLInputElement).value || ''
-                  if (!email) { alert('Please enter your email address'); return }
-                  const res = await fetch('/api/stripe/send-receipt', { 
-                    method: 'POST', 
-                    headers: {'Content-Type': 'application/json'}, 
-                    body: JSON.stringify({ session_id: sessionId, email }) 
-                  })
-                  const data = await res.json()
-                  if (!res.ok) alert(data?.error || 'Failed to send receipt')
-                  else alert('Receipt has been sent to your email')
+                  setErrorMessage(null)
+                  setSuccessMessage(null)
+                  if (!email) { setErrorMessage('Please enter your email address'); return }
+                  try {
+                    const res = await fetch('/api/stripe/send-receipt', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ session_id: sessionId, email }) })
+                    const data = await res.json()
+                    if (!res.ok) {
+                      setErrorMessage(data?.error || 'Failed to send receipt')
+                    } else {
+                      setSuccessMessage('Receipt has been sent to your email')
+                    }
+                  } catch (e) {
+                    setErrorMessage('Failed to send receipt')
+                  }
                 }} 
                 className="py-2 px-6 bg-[#ffdeda] text-[#47302e] font-bold rounded-xl border-2 border-[#47302e] hover:bg-[#e39fac] transition-colors"
               >
@@ -266,7 +243,7 @@ export default function MilkshakeSection() {
               <AnimatedLine className="p-1 h-4 w-full" />
             </h2>
             <p className="text-base md:text-lg text-[#47302e] font-medium mb-2 text-center md:text-left">
-              Merry Cookies offers a delightful range of milkshakes made with care — perfect with cookies or on their own.
+              Merry Cookies offers a delightful range of milkshakes made with care, perfect with cookies or on their own.
             </p>
             <p className="text-sm text-[#47302e] opacity-90">
               Cookies, specialty coffee, matcha and handcrafted milkshakes.

@@ -28,7 +28,7 @@ const MILKSHAKES = [
 ]
 
 export default function MilkshakeSection() {
-  const [quantities, setQuantities] = useState<number[]>(() => MILKSHAKES.map(() => 1))
+  const [quantities, setQuantities] = useState<number[]>(() => MILKSHAKES.map(() => 0))
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [paymentStatus, setPaymentStatus] = useState<'success' | 'canceled' | null>(null)
@@ -136,44 +136,11 @@ export default function MilkshakeSection() {
       }
     }
 
-    try {
-      const res = await fetch('/api/stripe/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cart }),
-      })
-
-      // handle non-json safely
-      const text = await res.text()
-      let data: unknown
-      try {
-        data = JSON.parse(text)
-      } catch { // Remove unused 'error' parameter
-        console.error('Non-JSON response from checkout API', { status: res.status, text })
-        setError(`Server error: non-JSON response (status ${res.status}). Check server logs.`)
-        setLoading(false)
-        return
-      }
-
-      const parsed = (data && typeof data === 'object') ? (data as Record<string, unknown>) : null
-      
-      if (parsed?.url && typeof parsed.url === 'string') {
-        // Store current section for return navigation
-        sessionStorage.setItem('return-to-section', 'milkshake')
-        window.location.href = parsed.url
-        return
-      }
-
-      if (parsed?.error && typeof parsed.error === 'string') {
-        setError(`Could not start payment: ${parsed.error}`)
-      } else {
-        setError('Could not start payment. Try again.')
-      }    } catch (error) {
-      const msg = error instanceof Error ? error.message : String(error)
-      setError(`Payment error: ${msg}`)
-    }
-
+    // Start Stripe Elements flow: store cart and redirect
+    sessionStorage.setItem('cart', JSON.stringify(cart))
+    window.location.href = '/checkout'
     setLoading(false)
+    return
   }
 
   // Send receipt email handler
@@ -291,7 +258,7 @@ export default function MilkshakeSection() {
               <AnimatedLine className="p-1 h-4 w-full" />
             </h2>
             <p className="text-base md:text-lg text-[#47302e] font-medium mb-2 text-center md:text-left">
-              Merry Cookies offers a delightful range of milkshakes made with care &mdash; perfect with cookies or on their own.
+              Merry Cookies offers a delightful range of milkshakes made with care, perfect with cookies or on their own.
             </p>
             <p className="text-sm text-[#47302e] opacity-90">Cookies, specialty coffee, matcha and handcrafted milkshakes.</p>
           </div>

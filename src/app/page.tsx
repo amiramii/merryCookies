@@ -5,7 +5,7 @@ import AboutSection from "./components/AboutSection";
 import MenuSection from "./components/MenuSection";
 import Footer from "./components/Footer";
 import ConatctForm from "./components/ConatctForm";
-import MilkshakeSection from "./components/MilkshakeSection";
+import MilkshakeSection from "./components/MilkshakeSection.new";
 
 export default function Home() {
   return (

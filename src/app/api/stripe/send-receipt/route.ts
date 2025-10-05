@@ -7,14 +7,14 @@ const resend = new Resend(process.env.RESEND_API_KEY || '')
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json() as { session_id: string; email: string }
-    const { session_id, email } = body
-    if (!session_id || !email) return NextResponse.json({ error: 'Missing session_id or email' }, { status: 400 })
+    const body = await req.json() as { payment_intent: string; email: string }
+    const { payment_intent, email } = body
+    if (!payment_intent || !email) return NextResponse.json({ error: 'Missing payment_intent or email' }, { status: 400 })
 
-    // Retrieve session with expanded line items
-    const session = await stripe.checkout.sessions.retrieve(session_id, { expand: ['line_items'] })
+    // Retrieve PaymentIntent with expanded line items
+    const intent = await stripe.paymentIntents.retrieve(payment_intent, { expand: ['charges'] }) as Stripe.PaymentIntent
     // Flatten shipping info for email template
-    const customer = session.customer_details
+    const customer = intent.shipping
     const addr = customer?.address
     const shippingInfo = customer
       ? {
@@ -28,23 +28,28 @@ export async function POST(req: Request) {
         }
       : {}
 
-    // Prepare line items array for template
-    const receiptItems = session.line_items?.data.map((item: Stripe.LineItem) => ({
-      description: item.description || (item.price?.product as Stripe.Product)?.name || '',
-      quantity: item.quantity || 0,
-      price: ((item.price?.unit_amount ?? item.amount_total) ?? 0) / 100,
-    })) || []
+    // For PaymentIntent, fetch latest charge for description/amount
+    let receiptItems: { description: string; quantity: number; price: number }[] = [];
+    let chargeObj: Stripe.Charge | null = null;
+    if (intent.latest_charge) {
+      chargeObj = await stripe.charges.retrieve(intent.latest_charge as string);
+      receiptItems.push({
+        description: chargeObj.description || 'Milkshake Order',
+        quantity: 1,
+        price: (chargeObj.amount || intent.amount || 0) / 100,
+      });
+    }
 
     // Construct HTML email manually
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
         <h2 style="color: #e39fac;">Thank you for your order</h2>
-        <p>Order ID: ${session.id}</p>
+        <p>Payment Intent ID: ${intent.id}</p>
         <h3>Order Summary</h3>
         <ul style="list-style: none; padding: 0;">${receiptItems.map(item =>
             `<li style="margin-bottom: 8px;">${item.quantity} x ${item.description} — &euro;${item.price.toFixed(2)}</li>`
           ).join('')}</ul>
-        <p><strong>Total: &euro;${((session.amount_total ?? 0) / 100).toFixed(2)}</strong></p>
+        <p><strong>Total: &euro;${((intent.amount ?? 0) / 100).toFixed(2)}</strong></p>
         <h3>Shipping Details</h3>
         <p>${shippingInfo.recipient}</p>
         <p>${shippingInfo.line1}${shippingInfo.line2 ? ', ' + shippingInfo.line2 : ''}</p>
@@ -57,9 +62,12 @@ export async function POST(req: Request) {
     const emailResponse = await resend.emails.send({
       from: process.env.FROM_EMAIL || 'onboarding@resend.dev',
       to: email,
-      subject: `Your Merry Cookies receipt - ${session.id}`,
+      subject: `Your Merry Cookies receipt - ${intent.id}`,
       html,
     })
+    if (!emailResponse || emailResponse.error) {
+      return NextResponse.json({ error: emailResponse?.error?.message || 'Failed to send email' }, { status: 500 })
+    }
     console.log('Resend email response:', emailResponse)
     return NextResponse.json({ ok: true, emailResponse })
   } catch (error: unknown) {
