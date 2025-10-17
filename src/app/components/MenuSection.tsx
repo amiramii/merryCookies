@@ -8,12 +8,25 @@ import { motion } from 'framer-motion';
 
 const builder = imageUrlBuilder(client);
 
-function urlFor(source: any) {
-  return builder.image(source);
+type SanityImage = { _type?: string; asset?: { _ref?: string } } | string | null | undefined
+
+function urlFor(source: SanityImage) {
+  // builder.image accepts various Sanity image shapes; typed as unknown here
+  // we only call .url() on the result where necessary
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return builder.image(source as any)
 }
 
 function MenuSection() {
-  const [cookies, setCookies] = useState<any[]>([]);
+  type Cookie = {
+    _id: string
+    name: string
+    description?: string
+    price?: number
+    image?: SanityImage
+  }
+
+  const [cookies, setCookies] = useState<Cookie[]>([]);
 
   useEffect(() => {
     async function fetchCookies() {
@@ -119,8 +132,8 @@ function MenuSection() {
             <CookieCard cookie={{
               id: cookie._id,
               name: cookie.name,
-              description: cookie.description,
-              price: cookie.price,
+              description: cookie.description ?? '',
+              price: cookie.price ?? 0,
               image: typeof cookie.image === 'string' ? cookie.image : (cookie.image ? urlFor(cookie.image).url() ?? '' : ''),
             }} />
           </motion.div>

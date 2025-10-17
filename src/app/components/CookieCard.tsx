@@ -1,9 +1,17 @@
 import React from 'react';
 import Image from 'next/image';
-import { Cookie } from '../data/cookiesData';
+
+// flexible cookie shape to support both local Cookie and Sanity-fetched cookie
+export interface CookieCardData {
+  id: string | number;
+  name: string;
+  description?: string;
+  image?: string;
+  price?: number;
+}
 
 interface CookieCardProps {
-  cookie: Cookie;
+  cookie: CookieCardData;
 }
 
 const CookieCard: React.FC<CookieCardProps> = ({ cookie }) => {
@@ -11,7 +19,7 @@ const CookieCard: React.FC<CookieCardProps> = ({ cookie }) => {
     <div className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 border-b-2 border-[#e39fac] h-80">
       <div className="relative h-48 w-full flex items-center justify-center text-center">
         <Image
-          src={cookie.image}
+          src={cookie.image ?? '/placeholder.png'}
           alt={cookie.name}
           width={150}
           height={150}
@@ -23,7 +31,7 @@ const CookieCard: React.FC<CookieCardProps> = ({ cookie }) => {
           {cookie.name}
         </h3>
         <p className="text-gray-600 text-sm leading-relaxed">
-          {cookie.description}
+          {cookie.description ?? ''}
         </p>
       </div>
     </div>

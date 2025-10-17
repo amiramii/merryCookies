@@ -19,16 +19,27 @@ const NextStudio = dynamic(
 )
 
 export default function StudioPageClient() {
-  const [config, setConfig] = useState<any>(null)
+  // Minimal local type that matches the exported studio config shape.
+  // Use unknown for extra properties to avoid explicit `any`.
+  type StudioConfig = {
+    projectId: string
+    dataset: string
+    title?: string
+  } & Record<string, unknown>
+
+  const [config, setConfig] = useState<StudioConfig | null>(null)
 
   useEffect(() => {
     // import the studio config on the client only
-    import('../../../../studio/sanity.config').then(mod => setConfig(mod.default)).catch(err => {
-      console.error('Failed to load studio config on client', err)
-    })
+    import('../../../../studio/sanity.config')
+      .then(mod => setConfig(mod.default as StudioConfig))
+      .catch(err => {
+        console.error('Failed to load studio config on client', err)
+      })
   }, [])
 
   if (!config) return <div style={{padding:20}}>Loading Studio…</div>
 
+  // NextStudio expects a stricter config type; the runtime object we import is compatible.
   return <NextStudio config={config} />
 }

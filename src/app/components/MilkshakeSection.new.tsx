@@ -210,7 +210,7 @@ export default function MilkshakeSection() {
                     } else {
                       setSuccessMessage('Receipt has been sent to your email')
                     }
-                  } catch (e) {
+                  } catch {
                     setErrorMessage('Failed to send receipt')
                   }
                 }} 
