@@ -1,10 +1,50 @@
 "use client"
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { client } from '../../sanity/client';
+import imageUrlBuilder from '@sanity/image-url';
 import { cookiesData } from '../data/cookiesData';
 import CookieCard from './CookieCard';
 import { motion } from 'framer-motion';
 
+const builder = imageUrlBuilder(client);
+
+function urlFor(source: any) {
+  return builder.image(source);
+}
+
 function MenuSection() {
+  const [cookies, setCookies] = useState<any[]>([]);
+
+  useEffect(() => {
+    async function fetchCookies() {
+      try {
+        const data = await client.fetch(`*[_type == "cookie"]{_id, name, description, price, image}`);
+        if (!data || data.length === 0) {
+          // fall back to local seeded data
+          setCookies(cookiesData.map(c => ({
+            _id: `local-${c.id}`,
+            name: c.name,
+            description: c.description,
+            price: c.price,
+            image: c.image, // local path string
+          })));
+        } else {
+          setCookies(data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch cookies from Sanity, falling back to local data', err);
+        setCookies(cookiesData.map(c => ({
+          _id: `local-${c.id}`,
+          name: c.name,
+          description: c.description,
+          price: c.price,
+          image: c.image,
+        })));
+      }
+    }
+    fetchCookies();
+  }, []);
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -69,14 +109,20 @@ function MenuSection() {
         viewport={{ once: true }}
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-10"
       >
-        {cookiesData.map((cookie) => (
+        {cookies.map((cookie) => (
           <motion.div
-            key={cookie.id}
+            key={cookie._id}
             variants={itemVariants}
             whileHover={{ scale: 1.05 }}
             transition={{ duration: 0.3 }}
           >
-            <CookieCard cookie={cookie} />
+            <CookieCard cookie={{
+              id: cookie._id,
+              name: cookie.name,
+              description: cookie.description,
+              price: cookie.price,
+              image: typeof cookie.image === 'string' ? cookie.image : (cookie.image ? urlFor(cookie.image).url() ?? '' : ''),
+            }} />
           </motion.div>
         ))}
       </motion.div>

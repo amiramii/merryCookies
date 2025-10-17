@@ -1,0 +1,73 @@
+name: Wait for Vercel deploy and seed Sanity
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch: {}
+
+jobs:
+  wait-and-seed:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install jq
+        run: |
+          sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Wait for latest Vercel deployment to become READY
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          set -euo pipefail
+          echo "Polling Vercel for latest deployment of project $VERCEL_PROJECT_ID"
+
+          START=$(date +%s)
+          TIMEOUT=$((15*60)) # 15 minutes
+
+          while :; do
+            resp=$(curl -s -H "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v6/deployments?projectId=$VERCEL_PROJECT_ID&limit=1")
+            depId=$(echo "$resp" | jq -r '.deployments[0].uid // empty')
+            state=$(echo "$resp" | jq -r '.deployments[0].state // empty')
+            url=$(echo "$resp" | jq -r '.deployments[0].url // empty')
+
+            if [ -z "$depId" ]; then
+              echo "No deployment found yet. Sleeping 10s..."
+            else
+              echo "Found deployment: $depId (state=$state, url=$url)"
+            fi
+
+            if [ "$state" = "READY" ]; then
+              echo "Deployment is READY: $depId ($url)"
+              echo "vercel_deployment_id=$depId" >> $GITHUB_OUTPUT
+              echo "vercel_deployment_url=$url" >> $GITHUB_OUTPUT
+              break
+            fi
+
+            now=$(date +%s)
+            elapsed=$((now - START))
+            if [ $elapsed -ge $TIMEOUT ]; then
+              echo "Timed out waiting for Vercel deployment after $elapsed seconds"
+              echo "Last response: $resp"
+              exit 1
+            fi
+
+            sleep 10
+          done
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Sanity seed script
+        env:
+          SANITY_PROJECT_ID: ${{ secrets.SANITY_PROJECT_ID }}
+          SANITY_DATASET: ${{ secrets.SANITY_DATASET }}
+          SANITY_TOKEN: ${{ secrets.SANITY_TOKEN }}
+        run: node studio/scripts/seedCookies.js
