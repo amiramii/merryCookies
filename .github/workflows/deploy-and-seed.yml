@@ -2,7 +2,7 @@ name: Wait for Vercel deploy and seed Sanity
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   workflow_dispatch: {}
 
 jobs:
@@ -60,10 +60,16 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install --no-audit --no-fund
+
+      - name: Debug: show presence of secrets
+        run: |
+          echo "SANITY_PROJECT_ID set: ${SANITY_PROJECT_ID:+yes}"
+          echo "SANITY_DATASET set: ${SANITY_DATASET:+yes}"
+          echo "SANITY_TOKEN set: ${SANITY_TOKEN:+yes}"
 
       - name: Run Sanity seed script
         env:

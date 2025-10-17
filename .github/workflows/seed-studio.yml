@@ -18,7 +18,13 @@ jobs:
           node-version: '20'
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install --no-audit --no-fund
+
+      - name: Debug: show presence of secrets
+        run: |
+          echo "SANITY_PROJECT_ID set: ${SANITY_PROJECT_ID:+yes}"
+          echo "SANITY_DATASET set: ${SANITY_DATASET:+yes}"
+          echo "SANITY_TOKEN set: ${SANITY_TOKEN:+yes}"
 
       - name: Run seeding script
         env:
